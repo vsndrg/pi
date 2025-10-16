@@ -1,0 +1,20 @@
+// public class Sum {
+//     private static long sum(String[] values) {
+//         long s = 0;
+//
+//         for (String arg : values) {
+//             String[] parts = arg.trim().split("[\\s\\p{Z}\\p{C}]+");
+//
+//             for (String p : parts) {
+//                 if (!p.isEmpty()) {
+//                     s += Long.parseLong(p);
+//                 }
+//             }
+//         }
+//         return s;
+//     }
+//
+//     public static void main(String[] args) {
+//         System.out.println(sum(args));
+//     }
+// }
