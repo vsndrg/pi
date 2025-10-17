@@ -1,25 +1,31 @@
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Wspp {
-    public static void main(String[] args) {
-        int bufSize = 4096;
-        boolean readSuccess = false;
-        LinkedHashMap<String, Integer> wordMap = new LinkedHashMap<>();
+    private static void updateMap(LinkedHashMap<String, IntList> map, String key, int value) {
+        IntList values = map.getOrDefault(key, new IntList());
+        values.append(value);
+        map.put(key, values);
+    }
 
-        try (FileInputStream fin = new FileInputStream(args[0])) {
-            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, bufSize);
+    public static void main(String[] args) {
+        boolean readSuccess = false;
+        LinkedHashMap<String, IntList> wordMap = new LinkedHashMap<>();
+
+        try (FileInputStream fin = new FileInputStream("test1.in")) {
+            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
+
+            int index = 1;
+            while (scanner.hasNextWord()) {
+                updateMap(wordMap, scanner.nextWord().toLowerCase(), index++);
+            }
 
             readSuccess = true;
         } catch (FileNotFoundException e) {
@@ -33,11 +39,9 @@ public class Wspp {
         }
 
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[1]), StandardCharsets.UTF_8))) {
-            ArrayList<Map.Entry<String, Integer>> wordList = new ArrayList<>(wordMap.entrySet());
-            wordList.sort(Comparator.comparingInt(e -> e.getKey().length()));
-
-            for (Map.Entry<String, Integer> entry : wordList) {
-                out.write(entry.getKey() + " " + entry.getValue());
+            for (Map.Entry<String, IntList> entry : wordMap.entrySet()) {
+                IntList values = entry.getValue();
+                out.write(entry.getKey() + " " + values.length + " " + values.toString());
                 out.newLine();
             }
         } catch (IOException e) {
@@ -45,3 +49,4 @@ public class Wspp {
         }
     }
 }
+

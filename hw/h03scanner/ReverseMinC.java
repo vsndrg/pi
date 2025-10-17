@@ -8,7 +8,6 @@ import java.util.Scanner;
 public class ReverseMinC {
     private static void reverse() throws IOException {
         MyScanner sStr = new MyScanner(System.in, StandardCharsets.UTF_8, 8192);
-        // Scanner sStr = new Scanner(System.in);
 
         int[][] nums = new int[2][];
         int j = 0;
@@ -16,9 +15,7 @@ public class ReverseMinC {
 
         while (sStr.hasNextLine()) {
             String str = sStr.nextLine();
-            // System.err.println(str);
             MyScanner sNum = new MyScanner(str, 8192);
-            // Scanner sNum = new Scanner(str);
             int[] arr = new int[2];
             int i = 0;
 

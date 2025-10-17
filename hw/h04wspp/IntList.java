@@ -5,11 +5,15 @@ public class IntList {
 
     final int growFactor = 2;
     private int capacity = 2;
-    private int arr[];
+    private int arr[] = new int[capacity];
+
+    public IntList() {
+    }
 
     public IntList(int length) {
         this.length = length;
         this.capacity = length;
+
         resize(length);
     }
 
@@ -28,6 +32,19 @@ public class IntList {
             resize();
         }
         arr[length++] = value;
+    }
+
+    public boolean isEmpty() {
+        return length == 0;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder strBuf = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            strBuf.append(Integer.toString(arr[i]) + (i < length - 1 ? " " : ""));
+        }
+        return strBuf.toString();
     }
 
     private void resize() {

@@ -6,6 +6,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
+import java.util.function.Predicate;
 
 class MyScanner {
     private final Reader in;
@@ -14,16 +15,30 @@ class MyScanner {
     private StringBuilder tokenBuf = new StringBuilder();
     private StringBuilder sepBuf = new StringBuilder();
 
-    private TokenType curTokenType;
-    private int curRadix = 10;
+    private static final String lineSep = System.lineSeparator();
 
     private int pos = 0;
     private int len = 0;
     private boolean eof = false;
+    private boolean isClosed = false;
 
-    private enum TokenType {
-        WORD, INT, LINE, SIGN, LINESEP, EOF, UNKNOWN;
-    }
+    private static record TokenSpec(
+        Predicate<Character> token,
+        Predicate<Character> prefix,
+        Predicate<Character> suffix
+    ) {}
+
+    private static final TokenSpec INT_SPEC = new TokenSpec(
+        c -> c != null && Character.isDigit(c),
+        c -> c != null && (c == '-' || c == '+'),
+        c -> c != null && (c == 'o' || c == 'O')
+    );
+
+    private static final TokenSpec WORD_SPEC = new TokenSpec(
+        c -> c != null && (Character.isLetter(c) || c == '\'' || Character.getType(c) == Character.DASH_PUNCTUATION),
+        c -> false,
+        c -> false
+    );
 
     public MyScanner(InputStream inputStream, Charset charset, int bufferSize) {
         this.in = new BufferedReader(new InputStreamReader(inputStream, charset));
@@ -36,159 +51,113 @@ class MyScanner {
     }
 
     public boolean hasNextInt() throws IOException {
-        return hasNext(TokenType.INT);
+        checkClosed();
+        return hasNext(INT_SPEC);
     }
 
     public boolean hasNextWord() throws IOException {
-        return hasNext(TokenType.WORD);
+        checkClosed();
+        return hasNext(WORD_SPEC);
     }
 
     public boolean hasNextLine() throws IOException {
-        tokenBuf.setLength(0);
+        checkClosed();
         sepBuf.setLength(0);
+        tokenBuf.setLength(0);
 
-        int character = peek();
-        if (character == -1) {
-            return false;
-        }
+        Character character = peek();
 
-        while (character != -1) {
-            if (consumeSep()) {
-                curTokenType = TokenType.LINE;
-                return true;
+        while (!eof && sepBuf.length() < lineSep.length()) {
+            if (character.equals(lineSep.charAt(sepBuf.length()))) {
+                sepBuf.append(character);
+            } else {
+                tokenBuf.append(character);
+                sepBuf.setLength(0);
             }
-            tokenBuf.append((char)character);
-            read();
-            character = peek();
+            character = readCharacter();
         }
-        curTokenType = TokenType.LINE;
-        return true;
-    }
-
-    private boolean consumeSep() throws IOException {
-        final String sep = System.lineSeparator();
-        boolean consumed = false;
-        int i = 0;
-        int character;
-        while (((character = peek()) != -1) && i < sep.length() && (char)character == sep.charAt(i)) {
-            sepBuf.append((char)character);
-            character = read();
-            i++;
-        }
-        if (i < sep.length()) {
-            if (i > 0) {
-                tokenBuf.append(sepBuf);
-                System.err.println("aaa");
-            }
-            return consumed;
-        }
-        if (i == sep.length()) {
-            return true;
-        }
-        return false;
+        return !(eof && sepBuf.length() == 0);
     }
 
     public int nextInt() throws IOException {
-        if (curRadix != 10) {
-            return Integer.parseUnsignedInt(next(), curRadix);
+        checkClosed();
+
+        char suffix = tokenBuf.charAt(tokenBuf.length() - 1);
+        if (suffix == 'o' || suffix == 'O') {
+            tokenBuf.setLength(tokenBuf.length() - 1);
+            return Integer.parseUnsignedInt(next(INT_SPEC), 8);
         }
-        return Integer.parseInt(next(), curRadix);
+        return Integer.parseInt(next(INT_SPEC), 10);
     }
 
     public String nextWord() throws IOException {
-        return next();
+        checkClosed();
+        return next(WORD_SPEC);
     }
 
     public String nextLine() throws IOException {
-        return next();
+        return tokenBuf.toString();
     }
 
     public void close() throws IOException {
+        checkClosed();
         try {
             if (in != null) {
                 in.close();
+                isClosed = true;
             }
         } catch (IOException e) {
             System.err.println("Failed to close reader");
         }
     }
 
-    private boolean hasNext(TokenType tokenType) throws IOException {
-        if (tokenType == TokenType.LINE) {
-            return hasNextLine();
-        }
-        while (true) {
-            nextToken();
-            if (curTokenType == TokenType.EOF) {
-                return false;
+    private boolean hasNext(TokenSpec spec) throws IOException {
+        tokenBuf.setLength(0);
+
+        Character character = peek();
+
+        // Find expected token
+        while (!eof && tokenBuf.length() == 0 && !spec.token().test(character)) {
+            if (spec.prefix().test(character)) {
+                if (tokenBuf.length() == 0) {
+                    tokenBuf.append(character);
+                } else {
+                    tokenBuf.setCharAt(0, character);
+                }
+            } else if (tokenBuf.length() > 0) {
+                tokenBuf.setLength(0);
             }
-            if (curTokenType == tokenType) {
-                return true;
-            }
+            character = readCharacter();
         }
+        // Consume expected token
+        while (!eof && spec.token().test(character)) {
+            tokenBuf.append(character);
+            character = readCharacter();
+        }
+        // Consume token suffix
+        if (!eof && spec.suffix().test(character)) {
+            tokenBuf.append(character);
+            character = readCharacter();
+        }
+        return !(eof && tokenBuf.length() == 0);
     }
 
-    private String next() throws IOException {
-        if (curTokenType == TokenType.LINE) {
-            return tokenBuf.toString();
-        }
-        if (tokenBuf.length() == 0 && !hasNext(curTokenType)) {
+    private String next(TokenSpec spec) throws IOException {
+        if (tokenBuf.length() == 0 && !hasNext(spec)) {
             throw new NoSuchElementException("Requested element does not exist");
         }
         return tokenBuf.toString();
     }
 
-    private void nextToken() throws IOException {
-        tokenBuf.setLength(0);
-        skipDelimiters();
-
-        int character = peek();
-        TokenType tokenType = getTokenType(character);
-        while (tokenType != TokenType.EOF && tokenType == getTokenType(character)) {
-            if (tokenType == TokenType.UNKNOWN) {
-                read();
-                break;
-            }
-            tokenBuf.append((char)character);
-            read();
-            character = peek();
+    private void checkClosed() {
+        if (isClosed) {
+            throw new IllegalStateException();
         }
-        if (tokenType == TokenType.INT) {
-            if (peek() == 'o' || peek() == 'O') {
-                curRadix = 8;
-            } else {
-                curRadix = 10;
-            }
-            read();
-        }
-        curTokenType = tokenType;
     }
 
-    private TokenType getTokenType(int character) throws IOException {
-        if (character == -1) {
-            return TokenType.EOF;
-        }
-        char c = (char)character;
-        if (c == '-' || c == '+') {
-            if (tokenBuf.length() > 0) {
-                tokenBuf.setLength(0);
-                return TokenType.UNKNOWN;
-            }
-            return TokenType.INT;
-        }
-        if (Character.isDigit(c)) {
-            return TokenType.INT;
-        }
-        if (Character.isLetter(c) || c == '\'' || Character.getType(c) == Character.DASH_PUNCTUATION) {
-            return TokenType.WORD;
-        }
-        return TokenType.UNKNOWN;
-    }
-
-    private void skipDelimiters() throws IOException {
-        while (Character.isWhitespace(peek())) {
-            read();
-        }
+    private Character readCharacter() throws IOException {
+        read();
+        return peek();
     }
 
     private void update() throws IOException {
@@ -201,19 +170,20 @@ class MyScanner {
         }
     }
 
-    private int read() throws IOException {
+    private Character read() throws IOException {
         if (pos >= len) {
             update();
-            if (eof) return -1;
+            if (eof) return null;
         }
         return buf[pos++];
     }
 
-    private int peek() throws IOException {
+    private Character peek() throws IOException {
         if (pos >= len) {
             update();
-            if (eof) return -1;
+            if (eof) return null;
         }
         return buf[pos];
     }
 }
+

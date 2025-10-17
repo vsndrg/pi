@@ -1,69 +1,46 @@
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class WordStat {
-    private static boolean isPartOfWord(char ch) {
-        return Character.isLetter(ch) || ch == '\'' || Character.getType(ch) == Character.DASH_PUNCTUATION;
-    }
 
     public static void main(String[] args) {
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(
-                new FileInputStream(args[0]),
-                "utf8"
-            ), 4096);
-            try {
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter( // Open file for write after read all
-                    new FileOutputStream(args[1]),
-                    "utf8"
-                ));
-                try {
-                    LinkedHashMap<String, Integer> wordsMap = new LinkedHashMap<>();
+        boolean readSuccess = false;
+        LinkedHashMap<String, Integer> wordMap = new LinkedHashMap<>();
 
-                    int bufSize = 4096;
-                    char[] chars = new char[bufSize];
-                    StringBuilder word = new StringBuilder();
-                    int readLen;
+        try (FileInputStream fin = new FileInputStream(args[0])) {
+            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
 
-                    while ((readLen = in.read(chars, 0, bufSize)) != -1) {
-                        for (int i = 0; i < readLen; i++) {
-                            char c = chars[i];
-                            if (isPartOfWord(c)) {
-                                word.append(Character.toLowerCase(c));
-                            } else {
-                                if (word.length() > 0) {
-                                    String w = word.toString();
-                                    wordsMap.put(w, wordsMap.getOrDefault(w, 0) + 1);
-                                    word.setLength(0);
-                                }
-                            }
-                        }
-                    }
-                    if (word.length() > 0) {
-                        String w = word.toString();
-                        wordsMap.put(w, wordsMap.getOrDefault(w, 0) + 1);
-                        word.setLength(0);
-                    }
+            while (scanner.hasNextWord()) {
+                String word = scanner.nextWord().toLowerCase();
+                System.err.println(word);
+                wordMap.put(word, wordMap.getOrDefault(word, 0) + 1);
+            }
 
-                    for (Map.Entry<String, Integer> entry : wordsMap.entrySet()) {
-                        out.write(entry.getKey() + " " + entry.getValue());
-                        out.newLine();
-                    }
-                } finally {
-                    out.close();
-                }
-            } finally {
-                in.close();
+            readSuccess = true;
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + args[0] + ": " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Failed to read from file " + args[0] + ": " + e.getMessage());
+        }
+
+        if (!readSuccess) {
+            return;
+        }
+
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[1]), StandardCharsets.UTF_8))) {
+            for (Map.Entry<String, Integer> entry : wordMap.entrySet()) {
+                out.write(entry.getKey() + " " + entry.getValue());
+                out.newLine();
             }
         } catch (IOException e) {
-            System.err.println("Input-output error: " + e.getMessage());
+            System.err.println("Failed to write in file " + args[1] + ": " + e.getMessage());
         }
     }
 }
