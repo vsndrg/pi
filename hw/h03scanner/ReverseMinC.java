@@ -1,9 +1,6 @@
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Scanner;
 
 public class ReverseMinC {
     private static void reverse() throws IOException {
@@ -68,3 +65,4 @@ public class ReverseMinC {
         }
     }
 }
+

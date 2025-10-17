@@ -1,6 +1,4 @@
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -15,8 +13,6 @@ public class Reverse {
             MyScanner sNum = new MyScanner(str, 8192);
             int[] arr = new int[4];
             int i = 0;
-
-            // System.err.println(str);
 
             while (sNum.hasNextInt()) {
                 if (i == arr.length) {
@@ -53,3 +49,4 @@ public class Reverse {
         }
     }
 }
+
