@@ -23,6 +23,7 @@ public class WordStat {
                 wordMap.put(word, wordMap.getOrDefault(word, 0) + 1);
             }
 
+            scanner.close();
             readSuccess = true;
         } catch (FileNotFoundException e) {
             System.err.println("File not found: " + args[0] + ": " + e.getMessage());

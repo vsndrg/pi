@@ -21,12 +21,11 @@ public class Wspp {
 
         try (FileInputStream fin = new FileInputStream(args[0])) {
             MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
-
             int index = 1;
             while (scanner.hasNextWord()) {
                 updateMap(wordMap, scanner.nextWord().toLowerCase(), index++);
             }
-
+            scanner.close();
             readSuccess = true;
         } catch (FileNotFoundException e) {
             System.err.println("File not found: " + args[0] + ": " + e.getMessage());

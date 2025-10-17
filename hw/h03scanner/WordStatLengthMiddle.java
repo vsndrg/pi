@@ -34,6 +34,7 @@ public class WordStatLengthMiddle {
                 processWord(wordMap, scanner.nextWord().toLowerCase());
             }
 
+            scanner.close();
             readSuccess = true;
         } catch (FileNotFoundException e) {
             System.err.println("File not found: " + args[0] + ": " + e.getMessage());
@@ -58,3 +59,4 @@ public class WordStatLengthMiddle {
         }
     }
 }
+
