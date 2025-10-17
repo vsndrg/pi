@@ -19,7 +19,7 @@ public class Wspp {
         boolean readSuccess = false;
         LinkedHashMap<String, IntList> wordMap = new LinkedHashMap<>();
 
-        try (FileInputStream fin = new FileInputStream("test1.in")) {
+        try (FileInputStream fin = new FileInputStream(args[0])) {
             MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
 
             int index = 1;
