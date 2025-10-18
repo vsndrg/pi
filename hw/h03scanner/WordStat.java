@@ -15,11 +15,10 @@ public class WordStat {
         LinkedHashMap<String, Integer> wordMap = new LinkedHashMap<>();
 
         try (FileInputStream fin = new FileInputStream(args[0])) {
-            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
+            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8);
 
             while (scanner.hasNextWord()) {
                 String word = scanner.nextWord().toLowerCase();
-                System.err.println(word);
                 wordMap.put(word, wordMap.getOrDefault(word, 0) + 1);
             }
 

@@ -16,6 +16,7 @@ class MyScanner {
     private StringBuilder sepBuf = new StringBuilder();
 
     private static final String lineSep = System.lineSeparator();
+    private static final int BUFFER_SIZE = 8192;
 
     private int pos = 0;
     private int len = 0;
@@ -40,14 +41,19 @@ class MyScanner {
         c -> false
     );
 
-    public MyScanner(InputStream inputStream, Charset charset, int bufferSize) {
+    public MyScanner(InputStream inputStream, Charset charset) {
         this.in = new BufferedReader(new InputStreamReader(inputStream, charset));
-        this.buf = new char[bufferSize];
+        this.buf = new char[BUFFER_SIZE];
     }
 
-    public MyScanner(String str, int bufferSize) {
+    public MyScanner(String str) {
         this.in = new BufferedReader(new StringReader(str));
-        this.buf = new char[bufferSize];
+        this.buf = new char[BUFFER_SIZE];
+    }
+
+    public boolean hasNext(Predicate<Character> partOfToken) throws IOException {
+        checkClosed();
+        return hasNext(new TokenSpec(partOfToken, c -> false, c -> false));
     }
 
     public boolean hasNextInt() throws IOException {
@@ -77,6 +83,11 @@ class MyScanner {
             character = readCharacter();
         }
         return !(eof && sepBuf.length() == 0);
+    }
+
+    public String next(Predicate<Character> partOfToken) throws IOException {
+        checkClosed();
+        return next(new TokenSpec(partOfToken, c -> false, c -> false));
     }
 
     public int nextInt() throws IOException {
@@ -143,6 +154,7 @@ class MyScanner {
     }
 
     private String next(TokenSpec spec) throws IOException {
+        checkClosed();
         if (tokenBuf.length() == 0 && !hasNext(spec)) {
             throw new NoSuchElementException("Requested element does not exist");
         }

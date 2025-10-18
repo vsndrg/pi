@@ -20,7 +20,7 @@ public class Wspp {
         LinkedHashMap<String, IntList> wordMap = new LinkedHashMap<>();
 
         try (FileInputStream fin = new FileInputStream(args[0])) {
-            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
+            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8);
             int index = 1;
             while (scanner.hasNextWord()) {
                 updateMap(wordMap, scanner.nextWord().toLowerCase(), index++);

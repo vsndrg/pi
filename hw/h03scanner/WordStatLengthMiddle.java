@@ -28,7 +28,7 @@ public class WordStatLengthMiddle {
         LinkedHashMap<String, Integer> wordMap = new LinkedHashMap<>();
 
         try (FileInputStream fin = new FileInputStream(args[0])) {
-            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8, 8192);
+            MyScanner scanner = new MyScanner(fin, StandardCharsets.UTF_8);
 
             while (scanner.hasNextWord()) {
                 processWord(wordMap, scanner.nextWord().toLowerCase());

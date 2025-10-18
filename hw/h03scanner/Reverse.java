@@ -4,13 +4,13 @@ import java.util.Arrays;
 
 public class Reverse {
     private static void reverse() throws IOException {
-        MyScanner sStr = new MyScanner(System.in, StandardCharsets.UTF_8, 8192);
+        MyScanner sStr = new MyScanner(System.in, StandardCharsets.UTF_8);
         int[][] nums = new int[4][];
         int j = 0;
 
         while (sStr.hasNextLine()) {
             String str = sStr.nextLine();
-            MyScanner sNum = new MyScanner(str, 8192);
+            MyScanner sNum = new MyScanner(str);
             int[] arr = new int[4];
             int i = 0;
 
